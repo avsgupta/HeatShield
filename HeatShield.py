@@ -1,6 +1,4 @@
-# HeatShield Mumbai — Google Colab
-# Run the installation cell first, then run this entire app cell.
-# The Gradio app will print a public URL below. Open that URL to use the dashboard.
+# HeatShield Mumbai
 # Login: user123
 # Password: pswrd
 
@@ -16,8 +14,7 @@ from shapely.geometry import shape
 from pyproj import Geod
 
 # ============================================================
-# HEATSHIELD MUMBAI — DECISION-FOCUSED DASHBOARD
-# Login: user123 / pswrd
+# DECISION-FOCUSED DASHBOARD
 # ============================================================
 
 LOGIN_USER = "user123"
@@ -39,8 +36,9 @@ RED_APPARENT = 45.0
 GEOD = Geod(ellps="WGS84")
 HEADERS = {"User-Agent": "HeatShieldMumbai/1.0"}
 
-# Population estimates used in this project.
+# Population estimates used in this project from 2023
 # Verify figures against the latest BMC demographic publication.
+
 POPULATION = {
     "A": 193520, "B": 133142, "C": 173800, "D": 362812,
     "E": 411366, "FS": 377567, "FN": 553355, "GS": 395115,
@@ -50,7 +48,7 @@ POPULATION = {
     "MW": 430829, "N": 651487, "S": 777977, "T": 357161
 }
 
-# ---------- Real BMC ward boundaries ----------
+# Real BMC ward boundaries
 
 def ward_code(name):
     s = re.sub(r"[^A-Z]", "", str(name).upper())
@@ -132,7 +130,7 @@ def fetch_wards():
     }
 
 
-# ---------- Real weather forecast, no API key ----------
+# Real weather forecast
 
 def fetch_weather():
     params = {
@@ -173,7 +171,7 @@ def fetch_weather():
     return w
 
 
-# ---------- Explainable risk and alert calculations ----------
+# Explainable risk and alert calculations
 
 def clamp_score(x, low, high):
     return float(np.clip((x - low) / (high - low) * 100, 0, 100))
@@ -184,9 +182,7 @@ def calculate_city_risk(w):
     max_temp_score = clamp_score(w["TodayMax"], 30, 43)
     apparent_score = clamp_score(w["TodayApparentMax"], 30, 48)
     humidity_score = clamp_score(w["Humidity"], 30, 100)
-
-    # Humidity is a contextual indicator, not a stand-alone
-    # heat danger measurement.
+    
     weather_score = (
         0.50 * max_temp_score +
         0.35 * apparent_score +
@@ -204,7 +200,6 @@ def alert_decision(w, score):
     t = w["TodayMax"]
     at = w["TodayApparentMax"]
 
-    # The strongest applicable rule determines the response.
     if t >= RED_TEMP or at >= RED_APPARENT:
         return {
             "level": "RED",
@@ -275,7 +270,7 @@ def alert_decision(w, score):
     }
 
 
-# ---------- Ward exposure score ----------
+# Ward exposure score
 
 def calculate_ward_scores(wards, weather_score):
     df = pd.DataFrame([
@@ -304,6 +299,7 @@ def calculate_ward_scores(wards, weather_score):
     ).clip(0, 100)
 
     # Screening score, not a validated health-risk probability.
+    
     df["RiskScore"] = (
         0.65 * weather_score + 0.35 * df["DensityScore"]
     ).round(1)
@@ -324,7 +320,7 @@ def calculate_ward_scores(wards, weather_score):
     return df.sort_values("RiskScore", ascending=False)
 
 
-# ---------- REVISED: detailed ward-specific solutions ----------
+# Detailed ward-specific solutions
 
 def ward_solutions(row, w, alert):
     """
@@ -355,6 +351,7 @@ def ward_solutions(row, w, alert):
         })
 
     # 1. Immediate response based on citywide alert severity.
+    
     if alert_level == "RED":
         add_immediate(
             "Activate urgent heat-health outreach",
@@ -451,8 +448,8 @@ def ward_solutions(row, w, alert):
             "Routine inspections completed and local concerns reviewed."
         )
 
-    # 2. Ward-specific priorities based on relative density.
-    # Density does not prove the existence of a local heat hotspot.
+    # 2. Ward-specific priorities based on relative density - density does not prove the existence of a local heat hotspot.
+    
     if pd.notna(density_score) and density_score >= 75:
         add_immediate(
             "Ward priority: inspect concentrated public activity",
@@ -551,6 +548,7 @@ def ward_solutions(row, w, alert):
         )
 
     # 3. Longer-term interventions informed by urban-heat research.
+    
     add_long(
         "Pilot cool roofs and reflective roof surfaces",
         "Urban heat-mitigation research, including modelling for the Mumbai region, "
@@ -603,7 +601,7 @@ def ward_solutions(row, w, alert):
     return immediate, long_term, tree_note
 
 
-# ---------- Create readable report ----------
+# Readable report
 
 def build_report(w, score, components, alert, df):
     lines = [
@@ -646,7 +644,7 @@ def build_report(w, score, components, alert, df):
     return "\n".join(lines)
 
 
-# ---------- Full data load ----------
+# Full data load
 
 def load_dashboard():
     try:
@@ -657,6 +655,7 @@ def load_dashboard():
         df = calculate_ward_scores(wards, weather_score)
 
         # Dashboard summary in plain language.
+        
         summary = f"""
 # Mumbai heat situation
 
@@ -680,6 +679,7 @@ def load_dashboard():
 """
 
         # Risk chart
+        
         chart = px.bar(
             df.sort_values("RiskScore"),
             x="RiskScore", y="Ward", orientation="h",
@@ -704,6 +704,7 @@ def load_dashboard():
         )
 
         # Real ward map using OpenStreetMap tiles; no map API key.
+        
         score_map = df.set_index("Ward")["RiskScore"].to_dict()
         band_map = df.set_index("Ward")["RiskBand"].to_dict()
         pop_map = df.set_index("Ward")["Population2023"].to_dict()
@@ -872,7 +873,7 @@ Try refreshing when the public BMC GIS and weather services are reachable.
         )
 
 
-# ---------- REVISED: Ward assessment display ----------
+# Ward assessment display
 
 def assess_ward(code, df, wards, weather, alert):
     if df is None or df.empty or not weather:
@@ -1057,7 +1058,7 @@ conditions are definitely present in Ward {row['Ward']}.
     return text, fig
 
 
-# ---------- UI ----------
+# UI 
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
