@@ -108,11 +108,3 @@ Limitations and responsible use:
    
 Security note
 The source currently contains example login credentials (user123 / pswrd) directly in the code. 
-
-Future improvements to be added:
-1. Add ward-level land-surface temperature from satellite observations.
-2. Derive vegetation, tree-cover, and built-up indicators from geospatial datasets.
-3. Incorporate vulnerable-population indicators using suitable, responsibly sourced data.
-4. Map and verify cooling facilities, public water points, health services, and access routes.
-5. Validate score weights and alert rules against observations and relevant public-health or municipal guidance.
-6. Evaluate interventions with before-and-after measurements, implementation costs, and community feedback.
